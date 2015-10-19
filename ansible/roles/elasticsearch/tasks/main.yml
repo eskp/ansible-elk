@@ -1,0 +1,32 @@
+---
+
+- include: RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+
+- include: Debian.yml
+  when: ansible_os_family == 'Debian'
+
+
+- name: Ensure deploy directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+  with_items:
+    - "{{ elk_deploy_path }}"
+    - "{{ elasticsearch_data_dir }}"
+
+- name: Copy config file
+  template:
+    src: elasticsearch.conf.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+  notify: restart elasticsearch
+
+
+- name: Service is enabled and started
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes

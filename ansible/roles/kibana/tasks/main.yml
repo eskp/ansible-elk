@@ -1,0 +1,46 @@
+---
+
+- include: RedHat.yml
+  when: ansible_os_family == 'RedHat'
+  tags: [kibana]
+
+
+- include: Debian.yml
+  when: ansible_os_family == 'Debian'
+  tags: [kibana]
+
+
+- name: Ensure deploy directory exists
+  file:
+    path: "{{ kibana_deploy_path }}" 
+    state: directory
+  tags: [kibana]
+
+
+- name: Download Kibana
+  get_url:
+    url: "https://download.elastic.co/kibana/kibana/kibana-{{ kibana_version }}.tar.gz"
+    dest: "{{ kibana_deploy_path }}/kibana-{{ kibana_version }}.tar.gz"
+  tags: [kibana]
+
+
+- name: Unarchive Kibana
+  command: >
+    tar -C {{ kibana_deploy_path }} -xvzf {{ kibana_deploy_path }}/kibana-{{ kibana_version }}.tar.gz
+    creates={{ kibana_root }}/README.txt
+  tags: [kibana]
+
+
+- name: Move Kibana into place
+  command: >
+    mv {{ kibana_deploy_path }}/kibana-{{ kibana_version }} {{ kibana_root }}
+    creates={{ kibana_root }}/README.txt
+  tags: [kibana]
+
+
+- name: Service is enabled and started
+  service:
+    name: kibana
+    enabled: yes
+    state: started
+  tags: [kibana]

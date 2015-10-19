@@ -1,0 +1,6 @@
+---
+
+- name: Copy init file
+  template:
+    src: kibana.init.rpm.j2
+    dest: /etc/init.d/kibana

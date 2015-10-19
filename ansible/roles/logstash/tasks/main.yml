@@ -1,0 +1,72 @@
+---
+
+- include: RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+
+- include: Debian.yml
+  when: ansible_os_family == 'Debian'
+
+
+- name: Create Logstash configuration files
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/logstash/conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - 01-lumberjack-input.conf
+    - 30-lumberjack-output.conf
+  notify: restart logstash
+
+
+- name: Create Logstash filters
+  copy:
+    src: "filters/{{ item }}"
+    dest: "/etc/logstash/conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - 10-syslog.conf
+    - 11-nginx.conf
+    - 12-apache.conf
+    - 14-solr.conf
+    - 15-drupal.conf
+  notify: restart logstash
+
+
+- name: Create Logstash configuration file for local syslog
+  template:
+    src: 02-local-syslog-input.conf.j2
+    dest: /etc/logstash/conf.d/02-local-syslog-input.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: logstash_monitor_local_syslog
+  notify: restart logstash
+
+
+- name: Ensure Logstash SSL key pair directory exists
+  file:
+    path: "{{ logstash_ssl_dir }}"
+    state: directory
+
+
+- name: Copy SSL key and cert for logstash-forwarder
+  copy:
+    src: "{{ item }}"
+    dest: "{{ logstash_ssl_dir }}/{{ item }}"
+    mode: 0644
+  with_items:
+    - "{{ logstash_ssl_key_file }}"
+    - "{{ logstash_ssl_certificate_file }}"
+  notify: restart logstash
+
+
+- name: Service is enabled and started
+  service:
+    name: logstash
+    state: started
+    enabled: yes

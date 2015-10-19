@@ -1,0 +1,7 @@
+- hosts: all
+  become: yes
+  roles:
+    - elasticsearch
+    - logstash
+    - kibana
+    - logstash-forwarder
